@@ -4109,10 +4109,11 @@ static BOOLEAN jjDENOMINATOR_P(leftv res, leftv v)
 
   // Iterate through remaining coefficients and compute LCM of denominators
   // LCM(a, b) = a * b / gcd(a, b)
-  for (poly q = pNext(p); q != NULL; pIter(q))
+  poly q = pNext(p);
+  while (q != NULL)
   {
     number d2 = n_GetDenom(pGetCoeff(q), currRing->cf);
-    if (!n_IsOne(d2, currRing->cf))
+    if (!n_IsOne(d2, currRing->cf) && !n_Equal(d, d2, currRing->cf))
     {
       // Compute LCM(d, d2) = d * d2 / gcd(d, d2)
       number g = n_SubringGcd(d, d2, currRing->cf);
@@ -4124,6 +4125,7 @@ static BOOLEAN jjDENOMINATOR_P(leftv res, leftv v)
       d = newD;
     }
     n_Delete(&d2, currRing->cf);
+    pIter(q);
   }
 
   res->data = reinterpret_cast<void*>(d);
