@@ -4093,6 +4093,45 @@ static BOOLEAN jjNUMERATOR(leftv res, leftv v)
   return FALSE;
 }
 
+/// Return the common denominator of all coefficients of a polynomial
+/// (as a number, which is the LCM of all coefficient denominators)
+static BOOLEAN jjDENOMINATOR_P(leftv res, leftv v)
+{
+  poly p = (poly)v->Data();
+  if (p == NULL)
+  {
+    res->data = reinterpret_cast<void*>(n_Init(1, currRing->cf));
+    return FALSE;
+  }
+
+  // Get the denominator of the first coefficient
+  number d = n_GetDenom(pGetCoeff(p), currRing->cf);
+
+  // Iterate through remaining coefficients and compute LCM of denominators
+  // LCM(a, b) = a * b / gcd(a, b)
+  poly q = pNext(p);
+  while (q != NULL)
+  {
+    number d2 = n_GetDenom(pGetCoeff(q), currRing->cf);
+    if (!n_IsOne(d2, currRing->cf) && !n_Equal(d, d2, currRing->cf))
+    {
+      // Compute LCM(d, d2) = d * d2 / gcd(d, d2)
+      number g = n_SubringGcd(d, d2, currRing->cf);
+      number prod = n_Mult(d, d2, currRing->cf);
+      number newD = n_Div(prod, g, currRing->cf);
+      n_Delete(&g, currRing->cf);
+      n_Delete(&prod, currRing->cf);
+      n_Delete(&d, currRing->cf);
+      d = newD;
+    }
+    n_Delete(&d2, currRing->cf);
+    pIter(q);
+  }
+
+  res->data = reinterpret_cast<void*>(d);
+  return FALSE;
+}
+
 static BOOLEAN jjDET(leftv res, leftv v)
 {
   matrix m=(matrix)v->Data();
